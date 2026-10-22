@@ -3,75 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="DeepHat: Orquestrador de Segurança Integrado com Manus AI">
     <title>DeepHat | Security Orchestrator</title>
     <style>
-        /* Reset e Base */
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
+        :root {
+            --bg-dark: #0a0a0a;
+            --bg-panel: #161616;
+            --accent: #00ffcc;
+            --accent-hover: #00cc99;
+            --text-main: #e0e0e0;
+            --text-muted: #888;
+            --border: #333;
+            --font-mono: 'Courier New', Courier, monospace;
         }
 
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
         body {
-            background-color: #0a0a0a;
-            color: #e0e0e0;
-            font-family: 'Courier New', Courier, monospace;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: var(--font-mono);
             line-height: 1.6;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
+            padding: 20px;
         }
 
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 20px;
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
         }
 
-        /* Componentes */
+        @media (max-width: 768px) {
+            .container { grid-template-columns: 1fr; }
+        }
+
         .panel {
-            background: #161616;
-            border: 1px solid #333;
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
             border-radius: 8px;
             padding: 20px;
             margin-bottom: 20px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
         }
 
         h1 {
-            color: #00ffcc;
+            color: var(--accent);
             font-size: 1.5rem;
+            margin-top: 0;
             text-transform: uppercase;
             letter-spacing: 2px;
-            margin-bottom: 10px;
         }
 
-        h3 {
-            margin-top: 0;
-            margin-bottom: 15px;
-            color: #00ffcc;
-        }
+        h3 { margin-top: 0; margin-bottom: 15px; }
 
-        /* Formulários */
         input[type="text"] {
             width: 100%;
             padding: 12px;
             background: #000;
-            border: 1px solid #333;
-            color: #e0e0e0;
+            border: 1px solid var(--border);
+            color: var(--text-main);
             font-family: inherit;
             font-size: 1rem;
             border-radius: 4px;
             margin-bottom: 10px;
         }
 
-        input:focus {
-            outline: none;
-            border-color: #00ffcc;
-        }
+        input:focus { outline: none; border-color: var(--accent); }
 
         button {
-            background: #00ffcc;
+            background: var(--accent);
             color: #000;
             border: none;
             padding: 12px 24px;
@@ -80,23 +81,16 @@
             border-radius: 4px;
             transition: background 0.2s;
             font-family: inherit;
+            width: 100%;
         }
 
-        button:hover {
-            background: #00cc99;
-        }
+        button:hover { background: var(--accent-hover); }
+        button:disabled { background: #555; cursor: not-allowed; opacity: 0.7; }
 
-        button:disabled {
-            background: #555;
-            cursor: not-allowed;
-            opacity: 0.7;
-        }
-
-        /* Feedback */
         .log-output {
             background: #000;
             padding: 15px;
-            border: 1px solid #333;
+            border: 1px solid var(--border);
             font-size: 0.9rem;
             white-space: pre-wrap;
             max-height: 400px;
@@ -104,18 +98,10 @@
             word-wrap: break-word;
         }
 
-        /* Artefatos */
-        .artifact-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-
+        .artifact-list { list-style: none; padding: 0; margin: 0; max-height: 300px; overflow-y: auto; }
         .artifact-item {
             background: #000;
-            border: 1px solid #333;
+            border: 1px solid var(--border);
             padding: 10px;
             margin-bottom: 8px;
             border-radius: 4px;
@@ -123,19 +109,15 @@
             flex-direction: column;
             gap: 5px;
         }
-
         .artifact-link {
-            color: #00ffcc;
+            color: var(--accent);
             text-decoration: none;
             font-size: 0.85rem;
             word-break: break-all;
+            cursor: pointer;
         }
+        .artifact-link:hover { text-decoration: underline; }
 
-        .artifact-link:hover {
-            text-decoration: underline;
-        }
-
-        /* Tags de Severidade */
         .tag {
             display: inline-block;
             padding: 2px 8px;
@@ -144,115 +126,82 @@
             font-size: 0.8rem;
             margin-right: 5px;
         }
-
         .severity-HIGH { background: #ff4d4d; color: white; }
         .severity-MEDIUM { background: #ffa500; color: black; }
         .severity-LOW { background: #4d79ff; color: white; }
         .severity-ERROR { background: #555; color: white; }
         .severity-INFO { background: #4d79ff; color: white; }
 
-        /* Loader */
         .loader {
             display: inline-block;
             width: 16px;
             height: 16px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
+            border: 2px solid rgba(255,255,255,.3);
             border-radius: 50%;
             border-top-color: #fff;
             animation: spin 1s ease-in-out infinite;
             vertical-align: middle;
         }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        /* Status Bar */
-        .status-bar {
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .status-indicator {
             font-size: 0.8rem;
-            color: #888;
-            margin-top: 10px;
-            display: flex;
-            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 5px;
+            background: #000;
+            border-radius: 4px;
+            text-align: center;
         }
-
-        /* Grid Principal */
-        .main-grid {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 20px;
-        }
-
-        @media (max-width: 768px) {
-            .main-grid {
-                grid-template-columns: 1fr;
-            }
-        }
+        .status-online { color: #00ff00; }
+        .status-offline { color: #ff4d4d; }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <div class="main-grid">
-            <!-- Coluna Principal -->
-            <div class="main-col">
-                <div class="panel">
-                    <h1>DeepHat Security Gateway</h1>
-                    <p style="color: #888; margin-bottom: 15px;">Descreva o cenário de segurança. O Manus AI processará a tarefa e retornará a análise e artefatos.</p>
-                    <input type="text" id="query-input" placeholder="Ex: Analise esta arquitetura de microserviços para vulnerabilidades de injeção...">
-                    <button id="analyze-btn">EXECUTAR TAREFA</button>
-                </div>
-
-                <div class="panel">
-                    <h3>Output de Inteligência</h3>
-                    <div class="log-output" id="log-box">Aguardando input...</div>
-                </div>
+        <!-- Coluna Principal -->
+        <div class="main-col">
+            <div class="panel">
+                <h1>DeepHat Security Gateway</h1>
+                <div class="status-indicator" id="api-status">MODO: LOCAL (Sem API)</div>
+                <p style="color: var(--text-muted); margin-bottom: 15px;">Descreva o cenário de segurança. O sistema usará a Manus AI se disponível, ou o Motor Heurístico Local caso contrário.</p>
+                <input type="text" id="query-input" placeholder="Ex: Analise esta arquitetura de microserviços para vulnerabilidades de injeção...">
+                <button id="analyze-btn">EXECUTAR TAREFA</button>
             </div>
 
-            <!-- Coluna Lateral -->
-            <div class="side-col">
-                <div class="panel">
-                    <h3>Artefatos Gerados</h3>
-                    <p style="font-size: 0.8rem; color: #888; margin-bottom: 10px;">Downloads e arquivos criados pela última tarefa.</p>
-                    <ul class="artifact-list" id="artifact-list">
-                        <li style="color: #888; font-size: 0.85rem;">Nenhum arquivo ainda.</li>
-                    </ul>
-                </div>
+            <div class="panel">
+                <h3>Output de Inteligência</h3>
+                <div class="log-output" id="log-box">Aguardando input...</div>
+            </div>
+        </div>
 
-                <div class="panel">
-                    <div class="status-bar">
-                        <span id="status-conn">WS: Inativo</span>
-                        <span id="status-task">Task: --</span>
-                    </div>
-                </div>
+        <!-- Coluna Lateral -->
+        <div class="side-col">
+            <div class="panel">
+                <h3>Artefatos Gerados</h3>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 10px;">Downloads e arquivos criados pela última tarefa.</p>
+                <ul class="artifact-list" id="artifact-list">
+                    <li style="color: var(--text-muted); font-size: 0.85rem;">Nenhum arquivo ainda.</li>
+                </ul>
             </div>
         </div>
     </div>
 
     <script>
-    /**
-     * DeepHat Core: Manus AI Orchestrator (Robust Edition)
-     * Developed by Kindo
-     * Version: 3.1 (No-Auth)
-     */
     const DeepHatEngine = (() => {
-        // --- CONFIGURAÇÃO DA API MANUS ---
+        // --- CONFIGURAÇÃO ---
         const MANUS_BASE_URL = "https://api.manus.im/v1";
-        const MANUS_WS_URL = "wss://api.manus.im";
-        const MANUS_API_KEY = "sk-jjQfByXlG--ry1Wx2wdaQ5ehRY6e0ZgDTkub4PXXvlIKDHQCUAFRk_N3UHz2_9eJ3CaYtMyzAGldGqR-IC24QY6r8QeD"; // Substitua pela sua chave real
-        const REQUEST_TIMEOUT = 30000; // 30 segundos
-        // ---------------------------------
+        const MANUS_API_KEY = "sk-jjQfByXlG--ry1Wx2wdaQ5ehRY6e0ZgDTkub4PXXvlIKDHQCUAFRk_N3UHz2_9eJ3CaYtMyzAGldGqR-IC24QY6r8QeD"; // Coloque sua chave aqui
+        const USE_API = MANUS_API_KEY !== "sk-jjQfByXlG--ry1Wx2wdaQ5ehRY6e0ZgDTkub4PXXvlIKDHQCUAFRk_N3UHz2_9eJ3CaYtMyzAGldGqR-IC24QY6r8QeD";
+        const REQUEST_TIMEOUT = 30000;
 
         const state = {
             currentTaskId: null,
             isProcessing: false,
-            history: [],
-            wsConnection: null
+            apiOnline: false
         };
 
-        // --- UTILITÁRIOS DE SEGURANÇA E HELPERS ---
-        
-        // Sanitiza texto para evitar que a resposta da IA quebre o HTML
+        // --- HELPERS ---
         const sanitizeHTML = (text) => {
             if (!text) return '';
             return String(text)
@@ -263,33 +212,14 @@
                 .replace(/'/g, '&#039;');
         };
 
-        // Converte objetos para JSON formatado e sanitizado para exibição
-        const formatObjectForDisplay = (obj) => {
-            try {
-                return sanitizeHTML(JSON.stringify(obj, null, 2));
-            } catch (e) {
-                return sanitizeHTML(String(obj));
-            }
-        };
-
-        // Wrapper de Fetch com Timeout
         const fetchWithTimeout = (url, options, timeout = REQUEST_TIMEOUT) => {
             return new Promise((resolve, reject) => {
-                const id = setTimeout(() => {
-                    reject(new Error('Timeout: A API demorou demais para responder.'));
-                }, timeout);
-
+                const id = setTimeout(() => reject(new Error('Timeout')), timeout);
                 fetch(url, options)
                     .then(response => {
                         clearTimeout(id);
-                        if (!response.ok) {
-                            return response.text().then(text => {
-                                throw new Error(`HTTP Error ${response.status}: ${text}`);
-                            });
-                        }
-                        return response.json().catch(() => {
-                            throw new Error("Resposta da API não é um JSON válido.");
-                        });
+                        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                        return response.json();
                     })
                     .then(data => resolve(data))
                     .catch(error => {
@@ -299,9 +229,99 @@
             });
         };
 
-        // --- CLIENTE HTTP GENÉRICO ---
-        const manusFetch = async (endpoint, options = {}) => {
+        const generateLocalDownload = (content, filename, mimeType) => {
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        };
+
+        // --- MOTOR HEURÍSTICO LOCAL (FALLBACK) ---
+        const localAnalysisEngine = (inputText) => {
+            const context = inputText.toLowerCase();
+            let report = {
+                severity: "INFO",
+                vector: "Análise Geral",
+                mitigation: "Aplicar princípios de segurança defensiva em camadas.",
+                deep_dive: [],
+                source: "LOCAL_ENGINE"
+            };
+
+            // Heurísticas Avançadas
+            if (context.includes('sql') || context.includes('injection') || context.includes('banco')) {
+                report.severity = "HIGH";
+                report.vector = "SQL Injection / Data Exfiltration";
+                report.mitigation = "Utilize Prepared Statements (PDO) ou ORM. Sanitização de input é insuficiente contra blind injection.";
+                report.deep_dive.push("Verifique se o banco suporta parametric queries.");
+                report.deep_dive.push("Teste com payloads de erro para identificar colunas expostas.");
+                report.deep_dive.push("Implemente WAF (Web Application Firewall) como segunda camada.");
+            } else if (context.includes('xss') || context.includes('cross-site') || context.includes('script')) {
+                report.severity = "MEDIUM";
+                report.vector = "Cross-Site Scripting (Stored/Reflected)";
+                report.mitigation = "Context-aware encoding (HTML, JS, CSS, URI). Utilize Content Security Policy (CSP) restritiva.";
+                report.deep_dive.push("CSP: default-src 'self'; script-src 'self'; object-src 'none'.");
+                report.deep_dive.push("Escape strings de saída baseada no contexto do DOM.");
+            } else if (context.includes('crypto') || context.includes('hash') || context.includes('senha') || context.includes('password')) {
+                report.severity = "HIGH";
+                report.vector = "Weak Cryptography / Plaintext Storage";
+                report.mitigation = "Nunca use MD5/SHA1 para senhas. Utilize Argon2id ou bcrypt com cost factor >= 10.";
+                report.deep_dive.push("Salting: Cada senha deve ter um salt único.");
+                report.deep_dive.push("Para dados em trânsito, utilize TLS 1.3 com Perfect Forward Secrecy.");
+            } else if (context.includes('api') || context.includes('rest') || context.includes('endpoint') || context.includes('jwt')) {
+                report.severity = "MEDIUM";
+                report.vector = "API Abuse / Broken Object Level Authorization (BOLA)";
+                report.mitigation = "Implemente Rate Limiting, JWT com expiração curta, e verifique o contexto do usuário em cada request.";
+                report.deep_dive.push("Adicione Headers de segurança: X-Content-Type-Options, X-Frame-Options, HSTS.");
+                report.deep_dive.push("Valide o formato dos tokens e rejeite tokens expirados.");
+            } else {
+                report.severity = "LOW";
+                report.vector = "General Architecture Review";
+                report.mitigation = "Aplique o princípio do menor privilégio. Segregue ambientes (Dev/Staging/Prod).";
+                report.deep_dive.push("Realize uma Threat Modeling Session (STRIDE).");
+                report.deep_dive.push("Revise a gestão de segredos (Secrets Management).");
+            }
+
+            return report;
+        };
+
+        // --- CLIENTE API MANUS ---
+        const fetchManusAnalysis = async (inputText) => {
             const headers = {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${MANUS_API_KEY}`,
-                'X-DeepHat-Client
+                'X-DeepHat-Client': 'v3.2'
+            };
+
+            const payload = {
+                instruction: inputText,
+                mode: "deep_analysis",
+                output_format: "json",
+                context: {
+                    domain: "cybersecurity",
+                    expertise_level: "senior",
+                    include_mitigation: true
+                }
+            };
+
+            const result = await fetchWithTimeout(`${MANUS_BASE_URL}/tasks`, {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify(payload)
+            });
+
+            state.apiOnline = true;
+            return result;
+        };
+
+        // --- ORQUESTRAÇÃO PRINCIPAL ---
+        const processQuery = async (inputText) => {
+            if (state.isProcessing) return;
+            state.isProcessing = true;
+
+            const btn = document.getElementById('analyze-btn');
+            const logBox = document

@@ -22,15 +22,10 @@
             -moz-osx-font-smoothing: grayscale;
         }
 
-        /* Utilitários de Layout */
         .container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
-        }
-
-        .hidden {
-            display: none !important;
         }
 
         /* Componentes */
@@ -58,7 +53,6 @@
         }
 
         /* Formulários */
-        input[type="password"],
         input[type="text"] {
             width: 100%;
             padding: 12px;
@@ -99,12 +93,6 @@
         }
 
         /* Feedback */
-        .error-msg {
-            color: #ff4d4d;
-            margin-top: 10px;
-            font-size: 0.9rem;
-        }
-
         .log-output {
             background: #000;
             padding: 15px;
@@ -205,48 +193,36 @@
 <body>
 
     <div class="container">
-        <!-- Painel de Login -->
-        <div class="panel" id="auth-panel">
-            <h1>DeepHat Security Gateway</h1>
-            <p style="color: #888;">Insira a chave de acesso para ativar o Orquestrador Manus AI.</p>
-            <input type="password" id="secret-input" placeholder="Chave de Acesso..." autocomplete="off">
-            <button id="auth-btn">AUTENTICAR</button>
-            <div class="error-msg hidden" id="auth-error">Acesso negado. Verifique a chave.</div>
-        </div>
-
-        <!-- Área Principal (Invisível até Login) -->
-        <div id="app-area" class="hidden">
-            <div class="main-grid">
-                <!-- Coluna Principal -->
-                <div class="main-col">
-                    <div class="panel">
-                        <h1>Console de Orquestração</h1>
-                        <p style="color: #888; margin-bottom: 15px;">Descreva o cenário de segurança. O Manus AI processará a tarefa e retornará a análise e artefatos.</p>
-                        <input type="text" id="query-input" placeholder="Ex: Analise esta arquitetura de microserviços para vulnerabilidades de injeção...">
-                        <button id="analyze-btn">EXECUTAR TAREFA</button>
-                    </div>
-
-                    <div class="panel">
-                        <h3>Output de Inteligência</h3>
-                        <div class="log-output" id="log-box">Aguardando input...</div>
-                    </div>
+        <div class="main-grid">
+            <!-- Coluna Principal -->
+            <div class="main-col">
+                <div class="panel">
+                    <h1>DeepHat Security Gateway</h1>
+                    <p style="color: #888; margin-bottom: 15px;">Descreva o cenário de segurança. O Manus AI processará a tarefa e retornará a análise e artefatos.</p>
+                    <input type="text" id="query-input" placeholder="Ex: Analise esta arquitetura de microserviços para vulnerabilidades de injeção...">
+                    <button id="analyze-btn">EXECUTAR TAREFA</button>
                 </div>
 
-                <!-- Coluna Lateral -->
-                <div class="side-col">
-                    <div class="panel">
-                        <h3>Artefatos Gerados</h3>
-                        <p style="font-size: 0.8rem; color: #888; margin-bottom: 10px;">Downloads e arquivos criados pela última tarefa.</p>
-                        <ul class="artifact-list" id="artifact-list">
-                            <li style="color: #888; font-size: 0.85rem;">Nenhum arquivo ainda.</li>
-                        </ul>
-                    </div>
+                <div class="panel">
+                    <h3>Output de Inteligência</h3>
+                    <div class="log-output" id="log-box">Aguardando input...</div>
+                </div>
+            </div>
 
-                    <div class="panel">
-                        <div class="status-bar">
-                            <span id="status-conn">WS: Inativo</span>
-                            <span id="status-task">Task: --</span>
-                        </div>
+            <!-- Coluna Lateral -->
+            <div class="side-col">
+                <div class="panel">
+                    <h3>Artefatos Gerados</h3>
+                    <p style="font-size: 0.8rem; color: #888; margin-bottom: 10px;">Downloads e arquivos criados pela última tarefa.</p>
+                    <ul class="artifact-list" id="artifact-list">
+                        <li style="color: #888; font-size: 0.85rem;">Nenhum arquivo ainda.</li>
+                    </ul>
+                </div>
+
+                <div class="panel">
+                    <div class="status-bar">
+                        <span id="status-conn">WS: Inativo</span>
+                        <span id="status-task">Task: --</span>
                     </div>
                 </div>
             </div>
@@ -257,12 +233,9 @@
     /**
      * DeepHat Core: Manus AI Orchestrator (Robust Edition)
      * Developed by Kindo
-     * Version: 3.0
+     * Version: 3.1 (No-Auth)
      */
     const DeepHatEngine = (() => {
-        // 1. CONFIGURAÇÃO SECRETA (Ofuscada)
-        const SECRET_KEY = "pepeta";
-        
         // --- CONFIGURAÇÃO DA API MANUS ---
         const MANUS_BASE_URL = "https://api.manus.im/v1";
         const MANUS_WS_URL = "wss://api.manus.im";
@@ -271,7 +244,6 @@
         // ---------------------------------
 
         const state = {
-            authenticated: false,
             currentTaskId: null,
             isProcessing: false,
             history: [],
@@ -280,23 +252,6 @@
 
         // --- UTILITÁRIOS DE SEGURANÇA E HELPERS ---
         
-        const simpleHash = (str) => {
-            let hash = 0;
-            for (let i = 0; i < str.length; i++) {
-                let char = str.charCodeAt(i);
-                hash = ((hash << 5) - hash) + char;
-                hash = hash & hash;
-            }
-            return hash.toString(16);
-        };
-
-        const TARGET_HASH = simpleHash(SECRET_KEY);
-
-        const authenticate = (inputPassword) => {
-            if (!inputPassword) return false;
-            return simpleHash(inputPassword) === TARGET_HASH;
-        };
-
         // Sanitiza texto para evitar que a resposta da IA quebre o HTML
         const sanitizeHTML = (text) => {
             if (!text) return '';
@@ -349,13 +304,4 @@
             const headers = {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${MANUS_API_KEY}`,
-                'X-DeepHat-Client': 'v3.0'
-            };
-
-            try {
-                return await fetchWithTimeout(`${MANUS_BASE_URL}${endpoint}`, {
-                    ...options,
-                    headers: { ...headers, ...options.headers }
-                });
-            } catch (error) {
-                console.error("[DeepHat]
+                'X-DeepHat-Client

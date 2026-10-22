@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="DeepHat: Orquestrador de Segurança Integrado com Manus AI">
+    <title>DeepHat | Security Orchestrator</title>
+    <style>
+        /* Reset e Base */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: #0a0a0a;
+            color: #e0e0e0;
+            font-family: 'Courier New', Courier, monospace;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Utilitários de Layout */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Componentes */
+        .panel {
+            background: #161616;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            color: #00ffcc;
+            font-size: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+
+        h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #00ffcc;
+        }
+
+        /* Formulários */
+        input[type="password"],
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            background: #000;
+            border: 1px solid #333;
+            color: #e0e0e0;
+            font-family: inherit;
+            font-size: 1rem;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #00ffcc;
+        }
+
+        button {
+            background: #00ffcc;
+            color: #000;
+            border: none;
+            padding: 12px 24px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background 0.2s;
+            font-family: inherit;
+        }
+
+        button:hover {
+            background: #00cc99;
+        }
+
+        button:disabled {
+            background: #555;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        /* Feedback */
+        .error-msg {
+            color: #ff4d4d;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+
+        .log-output {
+            background: #000;
+            padding: 15px;
+            border: 1px solid #333;
+            font-size: 0.9rem;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+            word-wrap: break-word;
+        }
+
+        /* Artefatos */
+        .artifact-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .artifact-item {
+            background: #000;
+            border: 1px solid #333;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .artifact-link {
+            color: #00ffcc;
+            text-decoration: none;
+            font-size: 0.85rem;
+            word-break: break-all;
+        }
+
+        .artifact-link:hover {
+            text-decoration: underline;
+        }
+
+        /* Tags de Severidade */
+        .tag {
+            display: inline-block;
+            padding: 2px 8px;
+            background: #333;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin-right: 5px;
+        }
+
+        .severity-HIGH { background: #ff4d4d; color: white; }
+        .severity-MEDIUM { background: #ffa500; color: black; }
+        .severity-LOW { background: #4d79ff; color: white; }
+        .severity-ERROR { background: #555; color: white; }
+        .severity-INFO { background: #4d79ff; color: white; }
+
+        /* Loader */
+        .loader {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Status Bar */
+        .status-bar {
+            font-size: 0.8rem;
+            color: #888;
+            margin-top: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* Grid Principal */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Painel de Login -->
+        <div class="panel" id="auth-panel">
+            <h1>DeepHat Security Gateway</h1>
+            <p style="color: #888;">Insira a chave de acesso para ativar o Orquestrador Manus AI.</p>
+            <input type="password" id="secret-input" placeholder="Chave de Acesso..." autocomplete="off">
+            <button id="auth-btn">AUTENTICAR</button>
+            <div class="error-msg hidden" id="auth-error">Acesso negado. Verifique a chave.</div>
+        </div>
+
+        <!-- Área Principal (Invisível até Login) -->
+        <div id="app-area" class="hidden">
+            <div class="main-grid">
+                <!-- Coluna Principal -->
+                <div class="main-col">
+                    <div class="panel">
+                        <h1>Console de Orquestração</h1>
+                        <p style="color: #888; margin-bottom: 15px;">Descreva o cenário de segurança. O Manus AI processará a tarefa e retornará a análise e artefatos.</p>
+                        <input type="text" id="query-input" placeholder="Ex: Analise esta arquitetura de microserviços para vulnerabilidades de injeção...">
+                        <button id="analyze-btn">EXECUTAR TAREFA</button>
+                    </div>
+
+                    <div class="panel">
+                        <h3>Output de Inteligência</h3>
+                        <div class="log-output" id="log-box">Aguardando input...</div>
+                    </div>
+                </div>
+
+                <!-- Coluna Lateral -->
+                <div class="side-col">
+                    <div class="panel">
+                        <h3>Artefatos Gerados</h3>
+                        <p style="font-size: 0.8rem; color: #888; margin-bottom: 10px;">Downloads e arquivos criados pela última tarefa.</p>
+                        <ul class="artifact-list" id="artifact-list">
+                            <li style="color: #888; font-size: 0.85rem;">Nenhum arquivo ainda.</li>
+                        </ul>
+                    </div>
+
+                    <div class="panel">
+                        <div class="status-bar">
+                            <span id="status-conn">WS: Inativo</span>
+                            <span id="status-task">Task: --</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    /**
+     * DeepHat Core: Manus AI Orchestrator (Robust Edition)
+     * Developed by Kindo
+     * Version: 3.0
+     */
+    const DeepHatEngine = (() => {
+        // 1. CONFIGURAÇÃO SECRETA (Ofuscada)
+        const SECRET_KEY = "pepeta";
+        
+        // --- CONFIGURAÇÃO DA API MANUS ---
+        const MANUS_BASE_URL = "https://api.manus.im/v1";
+        const MANUS_WS_URL = "wss://api.manus.im";
+        const MANUS_API_KEY = "sk-jjQfByXlG--ry1Wx2wdaQ5ehRY6e0ZgDTkub4PXXvlIKDHQCUAFRk_N3UHz2_9eJ3CaYtMyzAGldGqR-IC24QY6r8QeD"; // Substitua pela sua chave real
+        const REQUEST_TIMEOUT = 30000; // 30 segundos
+        // ---------------------------------
+
+        const state = {
+            authenticated: false,
+            currentTaskId: null,
+            isProcessing: false,
+            history: [],
+            wsConnection: null
+        };
+
+        // --- UTILITÁRIOS DE SEGURANÇA E HELPERS ---
+        
+        const simpleHash = (str) => {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                let char = str.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash;
+            }
+            return hash.toString(16);
+        };
+
+        const TARGET_HASH = simpleHash(SECRET_KEY);
+
+        const authenticate = (inputPassword) => {
+            if (!inputPassword) return false;
+            return simpleHash(inputPassword) === TARGET_HASH;
+        };
+
+        // Sanitiza texto para evitar que a resposta da IA quebre o HTML
+        const sanitizeHTML = (text) => {
+            if (!text) return '';
+            return String(text)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        };
+
+        // Converte objetos para JSON formatado e sanitizado para exibição
+        const formatObjectForDisplay = (obj) => {
+            try {
+                return sanitizeHTML(JSON.stringify(obj, null, 2));
+            } catch (e) {
+                return sanitizeHTML(String(obj));
+            }
+        };
+
+        // Wrapper de Fetch com Timeout
+        const fetchWithTimeout = (url, options, timeout = REQUEST_TIMEOUT) => {
+            return new Promise((resolve, reject) => {
+                const id = setTimeout(() => {
+                    reject(new Error('Timeout: A API demorou demais para responder.'));
+                }, timeout);
+
+                fetch(url, options)
+                    .then(response => {
+                        clearTimeout(id);
+                        if (!response.ok) {
+                            return response.text().then(text => {
+                                throw new Error(`HTTP Error ${response.status}: ${text}`);
+                            });
+                        }
+                        return response.json().catch(() => {
+                            throw new Error("Resposta da API não é um JSON válido.");
+                        });
+                    })
+                    .then(data => resolve(data))
+                    .catch(error => {
+                        clearTimeout(id);
+                        reject(error);
+                    });
+            });
+        };
+
+        // --- CLIENTE HTTP GENÉRICO ---
+        const manusFetch = async (endpoint, options = {}) => {
+            const headers = {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${MANUS_API_KEY}`,
+                'X-DeepHat-Client': 'v3.0'
+            };
+
+            try {
+                return await fetchWithTimeout(`${MANUS_BASE_URL}${endpoint}`, {
+                    ...options,
+                    headers: { ...headers, ...options.headers }
+                });
+            } catch (error) {
+                console.error("[DeepHat]
